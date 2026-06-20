@@ -22,3 +22,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=daniel-borek-repos_dependencies-report_66b5169d-18ca-4e77-af16-afcddbf10122
