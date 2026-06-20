@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SonarQube dependencies and licenses</title>
+<style>
+  :root {
+    --fg: #1d2330;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --bg: #fafafa;
+    --accent: #1f6feb;
+    --VW: #6f42c1;
+    --SVW: #8b5cf6;
+    --APP: #0891b2;
+    --TRK: #16a34a;
+    --INFO: #6b7280;
+    --LOW: #65a30d;
+    --MEDIUM: #ca8a04;
+    --HIGH: #ea580c;
+    --BLOCKER: #b91c1c;
+    --OPEN: #b91c1c;
+    --CONFIRM: #ea580c;
+    --ACCEPT: #6b7280;
+    --SAFE: #16a34a;
+    --FIXED: #16a34a;
+    --VULNERABILITY: #b91c1c;
+    --PROHIBITED_LICENSE: #6f42c1;
+    --MALWARE: #1f2937;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, system-ui, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+  }
+  header { padding: 16px 24px; border-bottom: 1px solid var(--line); background: white; }
+  header h1 { font-size: 16px; margin: 0 0 6px; }
+  .url { font-size: 14px; color: var(--muted); word-break: break-all; }
+  .url a { color: var(--accent); text-decoration: none; }
+
+  /* In-page tab strip */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--line);
+    background: white;
+    padding: 0 24px;
+  }
+  .tab {
+    padding: 10px 16px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    margin-bottom: -1px;
+    color: var(--muted);
+    font-size: 14px;
+    border-radius: 6px 6px 0 0;
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--bg);
+    color: var(--fg);
+    border-color: var(--line);
+    font-weight: 600;
+  }
+  .tab[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+  section.view { padding: 16px 24px; display: none; }
+  section.view.active { display: block; }
+
+  /* Buttons / form controls shared */
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.secondary { background: white; color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  input[type="search"] {
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 280px;
+  }
+  .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .status { color: var(--muted); font-size: 13px; }
+  .err {
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+
+  /* Tree */
+  .tree {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 0;
+    max-height: calc(100vh - 280px);
+    overflow: auto;
+  }
+  .node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .node:hover { background: #f3f4f6; }
+  .node.hidden { display: none; }
+  .twisty {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    user-select: none;
+    font-size: 11px;
+  }
+  .twisty.leaf { visibility: hidden; }
+  .children { padding-left: 22px; }
+  .children.collapsed { display: none; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: white;
+    text-transform: uppercase;
+    min-width: 56px;
+    text-align: center;
+  }
+  .badge.VW, .badge.SVW { background: var(--VW); }
+  .badge.APP { background: var(--APP); }
+  .badge.TRK { background: var(--TRK); }
+  .key { color: var(--muted); font-size: 12px; }
+  .empty { padding: 24px; text-align: center; color: var(--muted); }
+
+  /* Report */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .card { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .card h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-rows { display: flex; flex-direction: column; gap: 4px; }
+  .stat-row {
+    display: grid; grid-template-columns: 150px 1fr 40px;
+    align-items: center; gap: 8px; font-size: 13px;
+  }
+  .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+  .bar > div { height: 100%; }
+  .stat-row .count, .top5 .count { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .top5 .row {
+    display: grid; grid-template-columns: 1fr 40px; gap: 8px; padding: 4px 0;
+    border-bottom: 1px dashed var(--line); font-size: 13px;
+  }
+  .top5 .row:last-child { border-bottom: none; }
+  .top5 .row .label { display: flex; gap: 6px; align-items: center; min-width: 0; }
+  .top5 .row .label span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .multi { position: relative; }
+  .multi summary {
+    list-style: none; cursor: pointer; padding: 7px 10px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: white; font-size: 13px; user-select: none;
+  }
+  .multi summary::-webkit-details-marker { display: none; }
+  .multi[open] .picker {
+    display: block; position: absolute; z-index: 10;
+    top: calc(100% + 4px); background: white;
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    min-width: 220px;
+  }
+  .picker label { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 13px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 10px; font-size: 13px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { background: #f9fafb; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: none; }
+  .chip {
+    display: inline-block; padding: 1px 6px; border-radius: 3px;
+    color: white; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  }
+  .components-cell { color: var(--muted); font-size: 12px; }
+  .components-cell .more, .components-cell .less {
+    color: var(--accent); cursor: pointer; user-select: none; margin-left: 4px;
+  }
+  .components-cell ul {
+    margin: 4px 0 0; padding-left: 16px; color: var(--muted);
+  }
+  .components-cell ul li { line-height: 1.5; }
+  .results-summary { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SonarQube dependencies and licenses</h1>
+  <div class="url" id="urlBox">Loading…</div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <div class="tab active" role="tab" data-tab="discover">Discover</div>
+  <div class="tab" role="tab" data-tab="risk"       id="riskTabBtn" aria-disabled="true">Risk report</div>
+  <div class="tab" role="tab" data-tab="deps"       id="depsTabBtn" aria-disabled="true">Dependency report</div>
+</nav>
+
+<!-- Discover view -->
+<section class="view active" id="view-discover">
+  <div class="toolbar">
+    <button id="discoverBtn">Discover components</button>
+    <input id="search" type="search" placeholder="Search by name or key…" disabled>
+    <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+      <input type="checkbox" id="selectAll" disabled> Select all
+    </label>
+    <button id="createRiskReportBtn" class="secondary" disabled>Create risk report</button>
+    <button id="createDepsReportBtn" class="secondary" disabled>Create dependency report</button>
+    <button id="downloadSbomBtn"     class="secondary" disabled>Download SBOM</button>
+    <span class="status" id="status"></span>
+  </div>
+  <div id="discoverError" class="err" hidden></div>
+  <div class="tree" id="tree">
+    <div class="empty">Click "Discover components" to begin.</div>
+  </div>
+</section>
+
+<!-- Risk report view -->
+<section class="view" id="view-risk">
+  <div id="reportError" class="err" hidden></div>
+  <div id="reportProgress" class="status" style="margin-bottom:8px"></div>
+  <div id="reportContent" hidden>
+    <div class="grid">
+      <div class="card"><h3>Risk type</h3><div class="stat-rows" id="statType"></div></div>
+      <div class="card"><h3>Severity</h3><div class="stat-rows" id="statSeverity"></div></div>
+      <div class="card"><h3>Status</h3><div class="stat-rows" id="statStatus"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Top portfolios</h3><div class="top5" id="topVW"></div></div>
+      <div class="card"><h3>Top applications</h3><div class="top5" id="topAPP"></div></div>
+      <div class="card"><h3>Top projects</h3><div class="top5" id="topTRK"></div></div>
+    </div>
+    <div class="toolbar">
+      <details class="multi" id="filterType"><summary>Type</summary><div class="picker"></div></details>
+      <details class="multi" id="filterSeverity"><summary>Severity</summary><div class="picker"></div></details>
+      <details class="multi" id="filterStatus"><summary>Status</summary><div class="picker"></div></details>
+      <input id="riskSearch" type="search" placeholder="Search vulnerability or package…">
+      <button id="downloadCsvBtn" class="secondary" title="Export the rows matching the current filters and search">Download CSV</button>
+    </div>
+    <div class="results-summary" id="resultsSummary"></div>
+    <table id="results">
+      <thead><tr>
+        <th>Type</th><th>Severity</th><th>Status</th>
+        <th>Vulnerability</th><th>Package</th><th>Affected components</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Dependency report view -->
+<section class="view" id="view-deps">
+  <div id="depsError" class="err" hidden></div>
+  <div id="depsProgress" class="status" style="margin-bottom:8px"></div>
+  <div id="depsContent" hidden>
+    <div class="grid">
+      <div class="card"><h3>Top ecosystems</h3><div class="stat-rows" id="depsStatEcosystem"></div></div>
+      <div class="card"><h3>Top licenses</h3><div class="stat-rows" id="depsStatLicense"></div></div>
+      <div class="card"><h3>Totals</h3><div id="depsTotals" style="font-size:13px;color:var(--muted)"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Top portfolios</h3><div class="top5" id="depsTopVW"></div></div>
+      <div class="card"><h3>Top applications</h3><div class="top5" id="depsTopAPP"></div></div>
+      <div class="card"><h3>Top projects</h3><div class="top5" id="depsTopTRK"></div></div>
+    </div>
+    <div class="toolbar">
+      <details class="multi" id="depsFilterEcosystem"><summary>Ecosystem</summary><div class="picker"></div></details>
+      <details class="multi" id="depsFilterLicense"><summary>License</summary><div class="picker"></div></details>
+      <input id="depsSearch" type="search" placeholder="Search package or license…">
+    </div>
+    <div class="results-summary" id="depsResultsSummary"></div>
+    <table id="depsResults">
+      <thead><tr>
+        <th>Package</th><th>Version</th><th>Ecosystem</th>
+        <th>License</th><th>Affected components</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+// ===========================================================================
+// Constants
+// ===========================================================================
+const QUALIFIER_LABEL = { VW: 'Portfolio', SVW: 'Portfolio', APP: 'App', TRK: 'Project' };
+const QUALIFIER_ORDER = { VW: 0, SVW: 1, APP: 2, TRK: 3 };
+const TYPES      = ['VULNERABILITY', 'PROHIBITED_LICENSE', 'MALWARE'];
+const SEVERITIES = ['BLOCKER', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
+const STATUSES   = ['OPEN', 'CONFIRM', 'ACCEPT', 'SAFE', 'FIXED'];
+
+// ===========================================================================
+// Header (SonarQube URL)
+// ===========================================================================
+(async function init() {
+  const cfg = await fetch('/api/config').then(r => r.json());
+  const urlBox = document.getElementById('urlBox');
+  if (cfg.sqsURL) {
+    urlBox.innerHTML = `<a href="${cfg.sqsURL}" target="_blank" rel="noopener">${cfg.sqsURL}</a>` +
+      (cfg.hasToken ? '' : ' <span style="color:#b91c1c">(SQS_TOKEN not set)</span>');
+  } else {
+    urlBox.innerHTML = '<span style="color:#b91c1c">SQS_URL is not set</span>';
+  }
+})();
+
+// ===========================================================================
+// Tab switching
+// ===========================================================================
+function showTab(name) {
+  for (const t of document.querySelectorAll('.tab')) {
+    t.classList.toggle('active', t.dataset.tab === name);
+  }
+  for (const s of document.querySelectorAll('section.view')) {
+    s.classList.toggle('active', s.id === 'view-' + name);
+  }
+}
+for (const t of document.querySelectorAll('.tab')) {
+  t.addEventListener('click', () => {
+    if (t.getAttribute('aria-disabled') === 'true') return;
+    showTab(t.dataset.tab);
+  });
+}
+
+// ===========================================================================
+// Discover view
+// ===========================================================================
+let components = [];
+let byKey = new Map();
+let roots = [];
+let childrenOf = new Map();
+let selected = new Set();
+let nodeEls = new Map();
+
+const discoverBtn = document.getElementById('discoverBtn');
+const statusEl = document.getElementById('status');
+const discoverErr = document.getElementById('discoverError');
+const treeEl = document.getElementById('tree');
+const searchEl = document.getElementById('search');
+const selectAllEl = document.getElementById('selectAll');
+const createRiskReportBtn = document.getElementById('createRiskReportBtn');
+const createDepsReportBtn = document.getElementById('createDepsReportBtn');
+const downloadSbomBtn     = document.getElementById('downloadSbomBtn');
+const riskTabBtn = document.getElementById('riskTabBtn');
+const depsTabBtn = document.getElementById('depsTabBtn');
+
+discoverBtn.addEventListener('click', async () => {
+  discoverBtn.disabled = true;
+  statusEl.textContent = 'Discovering…';
+  discoverErr.hidden = true;
+  try {
+    const resp = await fetch('/api/discover');
+    if (!resp.ok) throw new Error(await resp.text());
+    components = await resp.json() || [];
+    buildIndex();
+    renderTree();
+    searchEl.disabled = false;
+    selectAllEl.disabled = false;
+    updateReportButton();
+    statusEl.textContent = `${components.length} components`;
+  } catch (e) {
+    discoverErr.textContent = 'Discovery failed: ' + e.message;
+    discoverErr.hidden = false;
+    statusEl.textContent = '';
+  } finally {
+    discoverBtn.disabled = false;
+  }
+});
+
+function buildIndex() {
+  byKey = new Map();
+  childrenOf = new Map();
+  for (const c of components) byKey.set(c.key, c);
+  for (const c of components) {
+    for (const ck of c.children || []) {
+      if (!childrenOf.has(c.key)) childrenOf.set(c.key, new Set());
+      childrenOf.get(c.key).add(ck);
+    }
+  }
+  for (const [k, set] of childrenOf) childrenOf.set(k, sortKeys([...set]));
+  roots = sortKeys(components.filter(c => !c.parents || c.parents.length === 0).map(c => c.key));
+}
+
+function sortKeys(keys) {
+  return keys.slice().sort((a, b) => {
+    const ca = byKey.get(a), cb = byKey.get(b);
+    if (!ca || !cb) return a.localeCompare(b);
+    const qa = QUALIFIER_ORDER[ca.qualifier] ?? 99;
+    const qb = QUALIFIER_ORDER[cb.qualifier] ?? 99;
+    if (qa !== qb) return qa - qb;
+    return (ca.name || ca.key).localeCompare(cb.name || cb.key);
+  });
+}
+
+function renderTree() {
+  treeEl.innerHTML = '';
+  nodeEls = new Map();
+  if (roots.length === 0) {
+    treeEl.innerHTML = '<div class="empty">No components found.</div>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  for (const k of roots) frag.appendChild(renderNode(k, new Set()));
+  treeEl.appendChild(frag);
+}
+
+function renderNode(key, ancestors) {
+  const c = byKey.get(key);
+  const wrap = document.createElement('div');
+  wrap.dataset.key = key;
+  const row = document.createElement('div');
+  row.className = 'node';
+  row.dataset.key = key;
+  row.dataset.search = ((c?.name || '') + ' ' + key).toLowerCase();
+
+  const kids = childrenOf.get(key) || [];
+  const isLeaf = kids.length === 0 || ancestors.has(key);
+
+  const twisty = document.createElement('span');
+  twisty.className = 'twisty' + (isLeaf ? ' leaf' : '');
+  twisty.textContent = '▾';
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = selected.has(key);
+  cb.addEventListener('change', () => onToggle(key, cb.checked));
+
+  const badge = document.createElement('span');
+  badge.className = 'badge ' + (c?.qualifier || '');
+  badge.textContent = QUALIFIER_LABEL[c?.qualifier] || c?.qualifier || '?';
+
+  const name = document.createElement('span');
+  name.textContent = c?.name || key;
+
+  const keyEl = document.createElement('span');
+  keyEl.className = 'key';
+  keyEl.textContent = key;
+
+  row.append(twisty, cb, badge, name, keyEl);
+  wrap.appendChild(row);
+
+  if (!nodeEls.has(key)) nodeEls.set(key, []);
+  nodeEls.get(key).push({ row, checkbox: cb });
+
+  if (!isLeaf) {
+    const childWrap = document.createElement('div');
+    childWrap.className = 'children';
+    const nextAnc = new Set(ancestors); nextAnc.add(key);
+    for (const ck of kids) childWrap.appendChild(renderNode(ck, nextAnc));
+    wrap.appendChild(childWrap);
+    twisty.addEventListener('click', () => {
+      childWrap.classList.toggle('collapsed');
+      twisty.textContent = childWrap.classList.contains('collapsed') ? '▸' : '▾';
+    });
+  }
+  return wrap;
+}
+
+function onToggle(key, checked) {
+  const stack = [key];
+  const seen = new Set();
+  while (stack.length) {
+    const k = stack.pop();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    if (checked) selected.add(k); else selected.delete(k);
+    for (const ck of childrenOf.get(k) || []) stack.push(ck);
+  }
+  for (const k of seen) {
+    for (const inst of (nodeEls.get(k) || [])) inst.checkbox.checked = checked;
+  }
+  updateReportButton();
+}
+
+selectAllEl.addEventListener('change', () => {
+  const c = selectAllEl.checked;
+  selected = c ? new Set(byKey.keys()) : new Set();
+  for (const [, insts] of nodeEls) {
+    for (const inst of insts) inst.checkbox.checked = c;
+  }
+  updateReportButton();
+});
+
+function updateReportButton() {
+  const n = selected.size;
+  createRiskReportBtn.disabled = n === 0;
+  createDepsReportBtn.disabled = n === 0;
+  downloadSbomBtn.disabled     = n === 0;
+  createRiskReportBtn.textContent = n ? `Create risk report (${n})` : 'Create risk report';
+  createDepsReportBtn.textContent = n ? `Create dependency report (${n})` : 'Create dependency report';
+  downloadSbomBtn.textContent     = n ? `Download SBOM (${n})` : 'Download SBOM';
+  // Tabs are gated on having loaded *some* data, not just selection.
+  if (n === 0) {
+    riskTabBtn.setAttribute('aria-disabled', 'true');
+    depsTabBtn.setAttribute('aria-disabled', 'true');
+  }
+}
+
+let searchTimer;
+searchEl.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applySearch, 120);
+});
+
+function applySearch() {
+  const q = searchEl.value.trim().toLowerCase();
+  if (!q) {
+    treeEl.querySelectorAll('.node').forEach(n => n.classList.remove('hidden'));
+    treeEl.querySelectorAll('.children').forEach(n => n.classList.remove('collapsed'));
+    return;
+  }
+  function visit(el) {
+    let anyMatch = false;
+    const row = el.querySelector(':scope > .node');
+    if (!row) return false;
+    const matches = row.dataset.search.includes(q);
+    const childWrap = el.querySelector(':scope > .children');
+    if (childWrap) {
+      for (const child of childWrap.children) if (visit(child)) anyMatch = true;
+      childWrap.classList.toggle('collapsed', !(anyMatch || matches));
+    }
+    const visible = matches || anyMatch;
+    row.classList.toggle('hidden', !visible);
+    return visible;
+  }
+  for (const root of treeEl.children) visit(root);
+}
+
+// ===========================================================================
+// Report view
+// ===========================================================================
+let risks = [];                                      // [{raw, source}]
+const filterState = { type: new Set(), severity: new Set(), status: new Set() };
+const reportProgress = document.getElementById('reportProgress');
+const reportErr = document.getElementById('reportError');
+const reportContent = document.getElementById('reportContent');
+const riskSearchEl = document.getElementById('riskSearch');
+
+createRiskReportBtn.addEventListener('click', async () => {
+  if (selected.size === 0) return;
+  // Enable + switch to the tab immediately so progress is visible.
+  riskTabBtn.setAttribute('aria-disabled', 'false');
+  showTab('risk');
+  await runReport();
+});
+
+async function runReport() {
+  reportErr.hidden = true;
+  reportContent.hidden = true;
+  risks = [];
+
+  const sources = [...selected].map(k => {
+    const c = byKey.get(k);
+    return { key: k, name: c?.name || k, qualifier: c?.qualifier || '' };
+  });
+
+  let done = 0;
+  const failures = [];                       // [{component, message}]
+  const concurrency = 6;
+  const queue = [...sources];
+  async function worker() {
+    while (queue.length) {
+      const c = queue.shift();
+      try {
+        const resp = await fetch('/api/risk-report?component=' + encodeURIComponent(c.key));
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        for (const r of (data.risks || [])) risks.push({ raw: r, source: c });
+      } catch (e) {
+        failures.push({ component: c, message: String(e.message || e) });
+        console.warn('risk-report failed for', c.key, e);
+      }
+      done++;
+      reportProgress.textContent = `Fetched ${done}/${sources.length}…`;
+    }
+  }
+  await Promise.all(Array.from({ length: concurrency }, worker));
+
+  reportProgress.textContent = failures.length
+    ? `Loaded ${risks.length} risks (${failures.length} of ${sources.length} component(s) failed)`
+    : `Loaded ${risks.length} risks`;
+
+  if (failures.length) {
+    // Show the first failure verbatim — the upstream SonarQube response is
+    // the most useful thing to see when diagnosing.
+    const first = failures[0];
+    const more = failures.length > 1 ? `\n…and ${failures.length - 1} more component(s) failed similarly. See browser console for the full list.` : '';
+    reportErr.textContent =
+      `Upstream error for component "${first.component.key}" (${QUALIFIER_LABEL[first.component.qualifier] || first.component.qualifier}):\n\n${first.message}${more}`;
+    reportErr.hidden = false;
+  }
+
+  reportContent.hidden = false;
+  buildFilters();
+  rerender();
+}
+
+// --- field extractors ----------------------------------------------------
+function pick(o, keys) {
+  for (const k of keys) {
+    if (o == null) return '';
+    const v = o[k];
+    if (v != null && v !== '') return v;
+  }
+  return '';
+}
+const FIELDS = {
+  type:     ['riskType', 'type'],
+  severity: ['riskSeverity', 'severity'],
+  status:   ['riskStatus', 'status'],
+  // Title is most informative for the user; CVE id is a useful fallback.
+  vuln:     ['riskTitle', 'title', 'vulnerabilityId', 'cveId', 'cve', 'identifier', 'name'],
+  vulnId:   ['vulnerabilityId', 'cveId', 'cve', 'identifier'],
+  pkgUrl:   ['packageUrl', 'purl'],
+  pkgName:  ['packageName', 'package', 'componentName'],
+  pkgVer:   ['packageVersion', 'version'],
+  url:      ['riskUrl', 'url'],
+};
+function getType(r)     { return pick(r.raw, FIELDS.type).toString().toUpperCase(); }
+function getSeverity(r) { return pick(r.raw, FIELDS.severity).toString().toUpperCase(); }
+function getStatus(r)   { return pick(r.raw, FIELDS.status).toString().toUpperCase(); }
+function getVuln(r)     { return pick(r.raw, FIELDS.vuln).toString(); }
+function getVulnId(r)   { return pick(r.raw, FIELDS.vulnId).toString(); }
+function getRiskUrl(r)  { return pick(r.raw, FIELDS.url).toString(); }
+function getPkg(r) {
+  const purl = pick(r.raw, FIELDS.pkgUrl).toString();
+  if (purl) return formatPurl(purl);
+  const p = pick(r.raw, FIELDS.pkgName).toString();
+  const v = pick(r.raw, FIELDS.pkgVer).toString();
+  return v ? `${p}@${v}` : p;
+}
+// "pkg:pypi/certifi@2022.6.15" -> "certifi@2022.6.15"
+// "pkg:npm/@scope/foo@1.2.3"   -> "@scope/foo@1.2.3"
+function formatPurl(purl) {
+  if (!purl.startsWith('pkg:')) return purl;
+  const rest = purl.slice(4);
+  const slash = rest.indexOf('/');
+  if (slash < 0) return rest;
+  // Strip subpath/qualifiers after '?' or '#'.
+  let tail = rest.slice(slash + 1);
+  const cut = tail.search(/[?#]/);
+  if (cut >= 0) tail = tail.slice(0, cut);
+  return tail;
+}
+
+// --- filters UI ----------------------------------------------------------
+function buildFilters() {
+  buildMulti('filterType',     'Type',     TYPES,      filterState.type);
+  buildMulti('filterSeverity', 'Severity', SEVERITIES, filterState.severity);
+  buildMulti('filterStatus',   'Status',   STATUSES,   filterState.status);
+}
+
+function buildMulti(elId, label, options, state) {
+  const el = document.getElementById(elId);
+  const picker = el.querySelector('.picker');
+  picker.innerHTML = '';
+  state.clear();
+  for (const opt of options) state.add(opt);
+  for (const opt of options) {
+    const lab = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.addEventListener('change', () => {
+      if (cb.checked) state.add(opt); else state.delete(opt);
+      updateSummary(el, label, state, options);
+      rerender();
+    });
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.style.background = `var(--${opt})`;
+    chip.textContent = opt;
+    lab.append(cb, chip);
+    picker.appendChild(lab);
+  }
+  updateSummary(el, label, state, options);
+}
+
+function updateSummary(el, label, state, options) {
+  const summary = el.querySelector('summary');
+  const n = state.size;
+  summary.textContent = (n === options.length) ? `${label}: all` : `${label}: ${n}/${options.length}`;
+}
+
+riskSearchEl.addEventListener('input', () => rerender());
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.multi[open]')) {
+    if (!d.contains(e.target)) d.removeAttribute('open');
+  }
+});
+
+// --- aggregation ---------------------------------------------------------
+function rerender() {
+  const filtered = filterRisks();
+  renderStats(filtered);
+  renderTop5(filtered);
+  renderTable(filtered);
+}
+
+function filterRisks() {
+  const q = riskSearchEl.value.trim().toLowerCase();
+  return risks.filter(r => {
+    const t = getType(r), s = getSeverity(r), st = getStatus(r);
+    if (filterState.type.size && !filterState.type.has(t)) return false;
+    if (filterState.severity.size && !filterState.severity.has(s)) return false;
+    if (filterState.status.size && !filterState.status.has(st)) return false;
+    if (q) {
+      const hay = (getVuln(r) + ' ' + getVulnId(r) + ' ' + getPkg(r)).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderStats(rs) {
+  renderBar('statType',     TYPES,      countBy(rs, getType));
+  renderBar('statSeverity', SEVERITIES, countBy(rs, getSeverity));
+  renderBar('statStatus',   STATUSES,   countBy(rs, getStatus));
+}
+
+function countBy(arr, fn) {
+  const m = new Map();
+  for (const x of arr) {
+    const k = fn(x) || '(unknown)';
+    m.set(k, (m.get(k) || 0) + 1);
+  }
+  return m;
+}
+
+function renderBar(elId, labels, counts) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  const max = Math.max(1, ...labels.map(l => counts.get(l) || 0));
+  for (const l of labels) {
+    const n = counts.get(l) || 0;
+    const row = document.createElement('div'); row.className = 'stat-row';
+    const lab = document.createElement('div');
+    const chip = document.createElement('span'); chip.className = 'chip';
+    chip.style.background = `var(--${l})`; chip.textContent = l;
+    lab.appendChild(chip);
+    const bar = document.createElement('div'); bar.className = 'bar';
+    const fill = document.createElement('div');
+    fill.style.width = `${(n / max) * 100}%`;
+    fill.style.background = `var(--${l})`;
+    bar.appendChild(fill);
+    const c = document.createElement('div'); c.className = 'count'; c.textContent = n;
+    row.append(lab, bar, c);
+    el.appendChild(row);
+  }
+}
+
+function renderTop5(rs) {
+  const buckets = { VW: new Map(), SVW: new Map(), APP: new Map(), TRK: new Map() };
+  for (const r of rs) {
+    const bucket = buckets[r.source.qualifier];
+    if (!bucket) continue;
+    const v = bucket.get(r.source.key) || { count: 0, source: r.source };
+    v.count++;
+    bucket.set(r.source.key, v);
+  }
+  const portfolios = new Map([...buckets.VW, ...buckets.SVW]);
+  renderTopList('topVW',  portfolios);
+  renderTopList('topAPP', buckets.APP);
+  renderTopList('topTRK', buckets.TRK);
+}
+
+function renderTopList(elId, mp) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  const arr = [...mp.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+  if (arr.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted)">No matches in selection.</div>';
+    return;
+  }
+  for (const v of arr) {
+    const row = document.createElement('div'); row.className = 'row';
+    const label = document.createElement('div'); label.className = 'label';
+    const badge = document.createElement('span'); badge.className = 'badge ' + v.source.qualifier;
+    badge.textContent = QUALIFIER_LABEL[v.source.qualifier] || v.source.qualifier;
+    const nm = document.createElement('span');
+    nm.textContent = v.source.name || v.source.key;
+    nm.title = v.source.key;
+    label.append(badge, nm);
+    const c = document.createElement('div'); c.className = 'count'; c.textContent = v.count;
+    row.append(label, c);
+    el.appendChild(row);
+  }
+}
+
+function renderTable(rs) {
+  // Group by (vulnerability id where present, package) so the same CVE on
+  // the same package collapses into one row regardless of which component
+  // reported it. Fall back to title-based key when there's no CVE id.
+  const groups = new Map();
+  for (const r of rs) {
+    const id = getVulnId(r) || getVuln(r);
+    const key = id + '||' + getPkg(r);
+    let g = groups.get(key);
+    if (!g) {
+      g = {
+        type: getType(r),
+        severity: getSeverity(r),
+        status: getStatus(r),
+        vuln: getVuln(r),
+        vulnId: getVulnId(r),
+        url: getRiskUrl(r),
+        pkg: getPkg(r),
+        sources: new Map(),
+      };
+      groups.set(key, g);
+    }
+    g.sources.set(r.source.key, r.source);
+    if (sevRank(getSeverity(r)) > sevRank(g.severity)) g.severity = getSeverity(r);
+    if (!g.url) g.url = getRiskUrl(r);
+  }
+  const rows = [...groups.values()].sort((a, b) => {
+    const d = b.sources.size - a.sources.size;
+    if (d) return d;
+    return sevRank(b.severity) - sevRank(a.severity);
+  });
+
+  document.getElementById('resultsSummary').textContent =
+    `${rows.length} unique risk(s) across ${rs.length} occurrence(s)`;
+
+  const tbody = document.querySelector('#results tbody');
+  tbody.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const g of rows) {
+    const tr = document.createElement('tr');
+    tr.append(
+      cellChip(g.type),
+      cellChip(g.severity),
+      cellChip(g.status),
+      cellVuln(g.vuln, g.url),
+      cellText(g.pkg || '—'),
+      cellComponents(g.sources),
+    );
+    frag.appendChild(tr);
+  }
+  tbody.appendChild(frag);
+}
+
+function cellVuln(text, url) {
+  const td = document.createElement('td');
+  if (!text) { td.textContent = '—'; return td; }
+  if (url) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = text;
+    a.style.color = 'var(--accent)';
+    a.style.textDecoration = 'none';
+    td.appendChild(a);
+  } else {
+    td.textContent = text;
+  }
+  return td;
+}
+
+function sevRank(s) { return ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'BLOCKER'].indexOf(s); }
+function cellChip(val) {
+  const td = document.createElement('td');
+  if (val) {
+    const c = document.createElement('span'); c.className = 'chip';
+    c.style.background = `var(--${val}, var(--muted))`; c.textContent = val;
+    td.appendChild(c);
+  } else { td.textContent = '—'; }
+  return td;
+}
+function cellText(v) { const td = document.createElement('td'); td.textContent = v; return td; }
+function cellComponents(map) {
+  const td = document.createElement('td');
+  td.className = 'components-cell';
+  const arr = [...map.values()].sort(
+    (a, b) => (a.name || a.key).localeCompare(b.name || b.key)
+  );
+  const labelOf = s => (QUALIFIER_LABEL[s.qualifier] || s.qualifier) + ': ' + (s.name || s.key);
+  if (arr.length <= 3) {
+    td.textContent = arr.map(labelOf).join('; ');
+    td.title = arr.map(s => `${QUALIFIER_LABEL[s.qualifier] || s.qualifier} ${s.key}`).join('\n');
+    return td;
+  }
+  // Collapsed: first 3 + a clickable "+N more" toggle. Expanded: all of them
+  // as a small list so the user can read each entry.
+  const collapsed = document.createElement('span');
+  collapsed.textContent = arr.slice(0, 3).map(labelOf).join('; ');
+  const expanded = document.createElement('ul');
+  expanded.hidden = true;
+  for (const s of arr) {
+    const li = document.createElement('li');
+    li.textContent = labelOf(s) + ' — ' + s.key;
+    expanded.appendChild(li);
+  }
+  const toggle = document.createElement('span');
+  toggle.className = 'more';
+  toggle.textContent = `(+${arr.length - 3} more)`;
+  toggle.addEventListener('click', () => {
+    const showAll = expanded.hidden;
+    expanded.hidden = !showAll;
+    collapsed.style.display = showAll ? 'none' : '';
+    toggle.textContent = showAll ? '(collapse)' : `(+${arr.length - 3} more)`;
+    toggle.className = showAll ? 'less' : 'more';
+  });
+  td.append(collapsed, ' ', toggle, expanded);
+  return td;
+}
+
+// ===========================================================================
+// Downloads
+// ===========================================================================
+downloadSbomBtn.addEventListener('click', () => {
+  if (selected.size === 0) return;
+  // Server streams the SBOM(s) and sets Content-Disposition: attachment, so
+  // the browser saves rather than navigates. A hidden anchor click keeps the
+  // current page intact.
+  const qs = [...selected].map(k => 'component=' + encodeURIComponent(k)).join('&');
+  triggerDownload('/api/sbom-download?' + qs);
+});
+
+const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+downloadCsvBtn.addEventListener('click', () => {
+  const rows = filterRisks();
+  if (rows.length === 0) {
+    alert('No risks to export. Run the risk report and adjust filters first.');
+    return;
+  }
+  const cols = [
+    'component_qualifier', 'component_key', 'component_name',
+    'risk_type', 'risk_severity', 'risk_status',
+    'vulnerability_id', 'risk_title',
+    'package', 'package_url',
+    'cvss_score', 'cwe_ids',
+    'published_on', 'created_at',
+    'risk_url',
+  ];
+  const lines = [cols.join(',')];
+  for (const r of rows) {
+    const raw = r.raw || {};
+    const cwe = Array.isArray(raw.cweIds) ? raw.cweIds.join(';') : (raw.cweIds || '');
+    lines.push([
+      QUALIFIER_LABEL[r.source.qualifier] || r.source.qualifier || '',
+      r.source.key,
+      r.source.name || '',
+      getType(r),
+      getSeverity(r),
+      getStatus(r),
+      getVulnId(r),
+      getVuln(r),
+      getPkg(r),
+      raw.packageUrl || '',
+      raw.cvssScore != null ? raw.cvssScore : '',
+      cwe,
+      raw.publishedOn || '',
+      raw.createdAt || '',
+      getRiskUrl(r),
+    ].map(csvEscape).join(','));
+  }
+  // Prepend BOM so Excel detects UTF-8 correctly.
+  const csv = '﻿' + lines.join('\r\n');
+  downloadBlob(csv, csvFilename(), 'text/csv;charset=utf-8');
+});
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function triggerDownload(url, filename) {
+  const a = document.createElement('a');
+  a.href = url;
+  if (filename) a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+function csvFilename() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `risks-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.csv`;
+}
+
+// ===========================================================================
+// Dependency report view
+// ===========================================================================
+let deps = [];                              // [{pkg, source}] – every package occurrence
+const depsFilterState = { ecosystem: new Set(), license: new Set() };
+const depsProgress = document.getElementById('depsProgress');
+const depsErr      = document.getElementById('depsError');
+const depsContent  = document.getElementById('depsContent');
+const depsSearchEl = document.getElementById('depsSearch');
+
+createDepsReportBtn.addEventListener('click', async () => {
+  if (selected.size === 0) return;
+  depsTabBtn.setAttribute('aria-disabled', 'false');
+  showTab('deps');
+  await runDepsReport();
+});
+
+async function runDepsReport() {
+  depsErr.hidden = true;
+  depsContent.hidden = true;
+  deps = [];
+
+  const sources = [...selected].map(k => {
+    const c = byKey.get(k);
+    return { key: k, name: c?.name || k, qualifier: c?.qualifier || '' };
+  });
+
+  let done = 0;
+  const failures = [];
+  // SBOMs are large (tens of MB each), so lower the concurrency.
+  const concurrency = 2;
+  const queue = [...sources];
+  async function worker() {
+    while (queue.length) {
+      const c = queue.shift();
+      try {
+        const resp = await fetch('/api/sbom-report?component=' + encodeURIComponent(c.key));
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        for (const p of (data.packages || [])) deps.push({ pkg: p, source: c });
+      } catch (e) {
+        failures.push({ component: c, message: String(e.message || e) });
+        console.warn('sbom-report failed for', c.key, e);
+      }
+      done++;
+      depsProgress.textContent = `Fetched ${done}/${sources.length}…`;
+    }
+  }
+  await Promise.all(Array.from({ length: concurrency }, worker));
+
+  depsProgress.textContent = failures.length
+    ? `Loaded ${deps.length} package occurrences (${failures.length} of ${sources.length} component(s) failed)`
+    : `Loaded ${deps.length} package occurrences`;
+
+  if (failures.length) {
+    const first = failures[0];
+    const more = failures.length > 1
+      ? `\n…and ${failures.length - 1} more component(s) failed similarly. See browser console for the full list.`
+      : '';
+    depsErr.textContent =
+      `Upstream error for component "${first.component.key}" (${QUALIFIER_LABEL[first.component.qualifier] || first.component.qualifier}):\n\n${first.message}${more}`;
+    depsErr.hidden = false;
+  }
+
+  depsContent.hidden = false;
+  buildDepsFilters();
+  rerenderDeps();
+}
+
+function licenseOf(p) {
+  return p.declaredLicense || p.concludedLicense || '';
+}
+
+function buildDepsFilters() {
+  // Build option lists from the actual data. Sort by frequency (desc).
+  const ecoCount = new Map();
+  const licCount = new Map();
+  for (const d of deps) {
+    const e = d.pkg.ecosystem || '(unknown)';
+    ecoCount.set(e, (ecoCount.get(e) || 0) + 1);
+    const l = licenseOf(d.pkg) || '(none)';
+    licCount.set(l, (licCount.get(l) || 0) + 1);
+  }
+  const ecoOpts = [...ecoCount.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const licOpts = [...licCount.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  buildDynMulti('depsFilterEcosystem', 'Ecosystem', ecoOpts, depsFilterState.ecosystem);
+  buildDynMulti('depsFilterLicense',   'License',   licOpts, depsFilterState.license);
+}
+
+function buildDynMulti(elId, label, options, state) {
+  const el = document.getElementById(elId);
+  const picker = el.querySelector('.picker');
+  picker.innerHTML = '';
+  state.clear();
+  for (const opt of options) state.add(opt);
+  for (const opt of options) {
+    const lab = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.addEventListener('change', () => {
+      if (cb.checked) state.add(opt); else state.delete(opt);
+      updateSummary(el, label, state, options);
+      rerenderDeps();
+    });
+    const name = document.createElement('span');
+    name.textContent = opt;
+    name.style.fontSize = '13px';
+    lab.append(cb, name);
+    picker.appendChild(lab);
+  }
+  // Add scrolling for long license lists.
+  picker.style.maxHeight = '300px';
+  picker.style.overflowY = 'auto';
+  updateSummary(el, label, state, options);
+}
+
+depsSearchEl.addEventListener('input', () => rerenderDeps());
+
+function filterDeps() {
+  const q = depsSearchEl.value.trim().toLowerCase();
+  return deps.filter(d => {
+    const eco = d.pkg.ecosystem || '(unknown)';
+    const lic = licenseOf(d.pkg) || '(none)';
+    if (depsFilterState.ecosystem.size && !depsFilterState.ecosystem.has(eco)) return false;
+    if (depsFilterState.license.size   && !depsFilterState.license.has(lic))   return false;
+    if (q) {
+      const hay = ((d.pkg.name || '') + ' ' + (d.pkg.purl || '') + ' ' + lic).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function rerenderDeps() {
+  const filtered = filterDeps();
+  renderDepsStats(filtered);
+  renderDepsTop5(filtered);
+  renderDepsTable(filtered);
+}
+
+function renderDepsStats(ds) {
+  // Top ecosystems / licenses bars.
+  const eco = countBy(ds, d => d.pkg.ecosystem || '(unknown)');
+  const lic = countBy(ds, d => licenseOf(d.pkg) || '(none)');
+  renderTopBar('depsStatEcosystem', eco, 8);
+  renderTopBar('depsStatLicense',   lic, 8);
+
+  // Totals card.
+  const uniquePurls = new Set(ds.map(d => d.pkg.purl)).size;
+  const uniquePkgs  = new Set(ds.map(d => d.pkg.name)).size;
+  document.getElementById('depsTotals').innerHTML =
+    `<div><b>${ds.length.toLocaleString()}</b> occurrences</div>` +
+    `<div><b>${uniquePurls.toLocaleString()}</b> unique package versions</div>` +
+    `<div><b>${uniquePkgs.toLocaleString()}</b> unique package names</div>` +
+    `<div><b>${eco.size}</b> ecosystems, <b>${lic.size}</b> distinct license expressions</div>`;
+}
+
+function renderTopBar(elId, counts, topN) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  const entries = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, topN);
+  const max = entries.length ? entries[0][1] : 1;
+  for (const [label, n] of entries) {
+    const row = document.createElement('div'); row.className = 'stat-row';
+    const lab = document.createElement('div');
+    lab.textContent = label;
+    lab.style.overflow = 'hidden';
+    lab.style.textOverflow = 'ellipsis';
+    lab.style.whiteSpace = 'nowrap';
+    lab.title = label;
+    const bar = document.createElement('div'); bar.className = 'bar';
+    const fill = document.createElement('div');
+    fill.style.width = `${(n / max) * 100}%`;
+    fill.style.background = 'var(--accent)';
+    bar.appendChild(fill);
+    const c = document.createElement('div'); c.className = 'count'; c.textContent = n;
+    row.append(lab, bar, c);
+    el.appendChild(row);
+  }
+}
+
+function renderDepsTop5(ds) {
+  const buckets = { VW: new Map(), SVW: new Map(), APP: new Map(), TRK: new Map() };
+  for (const d of ds) {
+    const bucket = buckets[d.source.qualifier];
+    if (!bucket) continue;
+    const v = bucket.get(d.source.key) || { count: 0, source: d.source };
+    v.count++;
+    bucket.set(d.source.key, v);
+  }
+  const portfolios = new Map([...buckets.VW, ...buckets.SVW]);
+  renderTopList('depsTopVW',  portfolios);
+  renderTopList('depsTopAPP', buckets.APP);
+  renderTopList('depsTopTRK', buckets.TRK);
+}
+
+function renderDepsTable(ds) {
+  // Group by PURL so each unique package@version is one row. Rows over a
+  // cap stay in the DOM-friendly range; if you exceed it, narrow with a
+  // filter or search.
+  const groups = new Map();
+  for (const d of ds) {
+    const key = d.pkg.purl || (d.pkg.name + '@' + (d.pkg.version || ''));
+    let g = groups.get(key);
+    if (!g) {
+      g = {
+        name: d.pkg.name,
+        version: d.pkg.version,
+        purl: d.pkg.purl,
+        ecosystem: d.pkg.ecosystem,
+        license: licenseOf(d.pkg),
+        sources: new Map(),
+      };
+      groups.set(key, g);
+    }
+    g.sources.set(d.source.key, d.source);
+    if (!g.license) g.license = licenseOf(d.pkg);
+  }
+  const rows = [...groups.values()].sort((a, b) => {
+    const d = b.sources.size - a.sources.size;
+    if (d) return d;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  const DISPLAY_CAP = 2000;
+  const shown = rows.slice(0, DISPLAY_CAP);
+  document.getElementById('depsResultsSummary').textContent =
+    `${rows.length.toLocaleString()} unique package version(s) across ${ds.length.toLocaleString()} occurrence(s)` +
+    (rows.length > DISPLAY_CAP ? `  —  showing first ${DISPLAY_CAP}, refine with filters or search` : '');
+
+  const tbody = document.querySelector('#depsResults tbody');
+  tbody.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const g of shown) {
+    const tr = document.createElement('tr');
+    const nameCell = document.createElement('td');
+    nameCell.textContent = g.name || '—';
+    nameCell.title = g.purl || '';
+    tr.append(
+      nameCell,
+      cellText(g.version || '—'),
+      cellText(g.ecosystem || '—'),
+      cellText(g.license || '(none)'),
+      cellComponents(g.sources),
+    );
+    frag.appendChild(tr);
+  }
+  tbody.appendChild(frag);
+}
+</script>
+</body>
+</html>
