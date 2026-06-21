@@ -1,3 +1,6 @@
+// DISCLAIMER: This software is provided for illustrational purposes only.
+// It comes with no warranty and no support. Use at your own risk.
+
 package main
 
 import (

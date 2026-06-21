@@ -1,5 +1,8 @@
 # dependencies-report
 
+> **Disclaimer:** This software is provided for illustrational purposes only.
+> It comes with **no warranty and no support**. Use at your own risk.
+
 A small Go web app that talks to a SonarQube server, discovers all of your
 portfolios, applications and projects, and lets you pick any subset of them
 to drive three reports:
